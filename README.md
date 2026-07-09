@@ -17,6 +17,7 @@
 | `pioneer-comm` | builder | Builder→Pioneer 通信 (46行) | ✅ 活跃 |
 | `quality-tools` | shared | SOUL 自检 + 清单校验 (201行) | ✅ 活跃 |
 | `win-toolkit` | builder | Windows 工具脚本 (78行) | ✅ 活跃 |
+| `paper-toolchain` | shared | 论文写作工具链 (pandoc/xelatex/biber + CI) | ✅ 交付 |
 
 ## 规范
 

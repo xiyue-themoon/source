@@ -1,0 +1,75 @@
+% !TEX program = xelatex
+\documentclass[12pt,a4paper]{article}
+
+% ---- Packages ----
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\geometry{margin=1in, top=1.2in, bottom=1.2in}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, citecolor=blue, linkcolor=blue, urlcolor=blue}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{caption}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{datetime2}
+\usepackage{parskip}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small \textit{\shortauthor}}
+\fancyhead[R]{\small \shorttitle}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ---- Commands ----
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+
+% ---- Metadata ----
+\newcommand{\shortauthor}{Author}
+\newcommand{\shorttitle}{Short Title}
+
+% ---- Bibliography ----
+\usepackage[backend=biber, style=ieee, sorting=none]{biblatex}
+\addbibresource{src/references.bib}
+
+\begin{document}
+
+% ============================================
+% TITLE
+% ============================================
+\begin{center}
+{\LARGE \textbf{Paper Title Here}} \\[12pt]
+{\large Author Name} \\[4pt]
+\today
+\end{center}
+
+% ============================================
+% ABSTRACT
+% ============================================
+\begin{abstract}
+\noindent
+Write abstract here.
+\end{abstract}
+
+% ============================================
+% INTRODUCTION
+% ============================================
+\section{Introduction}
+
+Write introduction here~\cite{key}.
+
+% ============================================
+% REFERENCES
+% ============================================
+\printbibliography
+
+\end{document}
