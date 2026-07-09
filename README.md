@@ -8,7 +8,10 @@
 | 目录 | 说明 | 状态 |
 |:-----|:-----|:----:|
 | `[pioneer] vision2model` | 图像→3D 测量管线 | ✅ 交付 |
-| — | 更多项目待添加... | |
+| `[pioneer] system-scripts` | Hermes 子系统脚本（计费/自学习/配置监控等） | ✅ 存档 |
+| `[pioneer] smart-truncate` | Token 压缩工具 | ✅ 存档 |
+| `[shared] system-scripts` | Shared 子系统脚本（偏差防护） | ✅ 存档 |
+| `[shared] qw3` | 多 Agent 协作 FIFO 框架 | ✅ 存档 |
 
 ## 规范
 
