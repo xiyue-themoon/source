@@ -5,16 +5,22 @@
 
 ## 项目目录
 
-| 目录 | 说明 | 状态 |
-|:-----|:-----|:----:|
-| `[pioneer] vision2model` | 图像→3D 测量管线 | ✅ 交付 |
-| `[pioneer] system-scripts` | Hermes 子系统脚本（计费/自学习/配置监控等） | ✅ 存档 |
-| `[pioneer] smart-truncate` | Token 压缩工具 | ✅ 存档 |
-| `[shared] system-scripts` | Shared 子系统脚本（偏差防护） | ✅ 存档 |
-| `[shared] qw3` | 多 Agent 协作 FIFO 框架 | ✅ 存档 |
+| 目录 | 归属 | 说明 | 状态 |
+|:-----|:----:|:-----|:----:|
+| `vision2model` | pioneer | 图像→3D 测量管线 | ✅ 交付 |
+| `system-scripts` | pioneer | 计费/自学习/配置监控等 | ✅ 存档 |
+| `smart-truncate` | pioneer | Token 压缩工具 | ✅ 存档 |
+| `system-scripts` | shared | 偏差防护脚本 | ✅ 存档 |
+| `qw3` | shared | 多 Agent 协作 FIFO 框架 | ✅ 存档 |
+| `qw3-bridge` | builder | qw3 通信桥接 (604+133行) | ✅ 活跃 |
+| `memory-scorer` | shared | 自学习系统评分代理 (351行) | ✅ 活跃 |
+| `pioneer-comm` | builder | Builder→Pioneer 通信 (46行) | ✅ 活跃 |
+| `quality-tools` | shared | SOUL 自检 + 清单校验 (201行) | ✅ 活跃 |
+| `win-toolkit` | builder | Windows 工具脚本 (78行) | ✅ 活跃 |
 
 ## 规范
 
-- 每个项目一个独立子目录，含独立的 README 和依赖声明
-- 已完成的项目归档不删，保留完整 git 历史
-- Agent 直接 `git clone` 或 `git pull` 即可部署
+- 前缀 `[pioneer]` / `[builder]` / `[shared]` 区分维护归属
+- 每个项目含独立 README 和依赖声明
+- 提交格式：`{type}: [归属] 描述`
+- 废弃直接 `git rm -r`，git history 会记住
