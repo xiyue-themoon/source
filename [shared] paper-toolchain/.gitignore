@@ -1,0 +1,21 @@
+# Build artifacts
+build/
+output/*.pdf
+!output/.gitkeep
+
+# LaTeX aux files
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.toc
+*.lof
+*.lot
+
+# OS
+Thumbs.db
+.DS_Store
