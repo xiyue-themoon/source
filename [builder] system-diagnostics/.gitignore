@@ -1,0 +1,8 @@
+# Scripts in this directory are tracked (no build artifacts expected)
+# This .gitignore exists to prevent accidental pollution only.
+*
+!*.ps1
+!*.py
+!*.md
+!*.sh
+!.gitignore
