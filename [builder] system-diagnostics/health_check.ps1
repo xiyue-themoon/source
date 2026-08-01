@@ -1,95 +1,94 @@
-Write-Host "=============================================="
-Write-Host "  SYSTEM HEALTH CHECK"
-Write-Host "  $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-Write-Host "=============================================="
+<#
+.SYNOPSIS
+  Morning health check — 10-second glance at system state.
+  PURE ASCII — runs on PS5.1 without BOM issues on any locale.
+.DESCRIPTION
+  Checks: OS uptime/RAM, GPU, disk, network, proxy, errors, env, key processes.
+.NOTES
+  Author: Hermes Builder
+  Run: powershell -NoProfile -ExecutionPolicy Bypass -File health_check.ps1
+#>
+
+Write-Host "=== System Health Check ===" -ForegroundColor Cyan
 Write-Host ""
 
-Write-Host "=== 1. SYSTEM UPTIME & MEMORY ==="
+# --- System Info ---
+Write-Host "--- System ---"
 $os = Get-CimInstance Win32_OperatingSystem
-$uptime = [math]::Round(((Get-Date) - $os.LastBootUpTime).TotalHours, 1)
-$totalGB = [math]::Round($os.TotalVisibleMemorySize / 1MB, 1)
-$freeMB = [math]::Round($os.FreePhysicalMemory / 1KB, 1)
-$pct = [math]::Round($os.FreePhysicalMemory / $os.TotalVisibleMemorySize * 100, 1)
-Write-Host "  Uptime:     $uptime hours"
-Write-Host "  RAM Total:  $totalGB GB"
-Write-Host "  RAM Free:   $freeMB MB ($pct%)"
-Write-Host ""
+$boot = $os.LastBootUpTime
+$up = (Get-Date) - $boot
+Write-Host ("  Boot: " + $boot.ToString("yyyy-MM-dd HH:mm:ss"))
+Write-Host ("  Up: " + $up.Days + "d " + $up.Hours + "h " + $up.Minutes + "m")
+$uM = [math]::Round(($os.TotalVisibleMemorySize - $os.FreePhysicalMemory)/1MB, 1)
+$tM = [math]::Round($os.TotalVisibleMemorySize/1MB, 1)
+Write-Host ("  RAM: " + $uM + "/" + $tM + "GB used")
 
-Write-Host "=== 2. DISK USAGE ==="
-Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object {
-    $d = $_.DeviceID
-    $total = [math]::Round($_.Size / 1GB, 1)
-    $free = [math]::Round($_.FreeSpace / 1GB, 1)
-    $used = [math]::Round(($_.Size - $_.FreeSpace) / 1GB, 1)
-    $pctx = [math]::Round($_.FreeSpace / $_.Size * 100, 1)
-    Write-Host "  $d  Total: ${total}G  Used: ${used}G  Free: ${free}G ($pctx%)"
+# --- GPU ---
+Write-Host ""
+Write-Host "--- GPU ---"
+$nvidia = & "nvidia-smi" --query-gpu=name,temperature.gpu,utilization.gpu,memory.used,memory.total --format=csv,noheader 2>$null
+if ($nvidia) { Write-Host ("  " + $nvidia) } else { Write-Host "  nvidia-smi: not available" }
+
+# --- Disks ---
+Write-Host ""
+Write-Host "--- Disks ---"
+Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -match "^[A-Z]:" } | ForEach-Object {
+    $pct = [math]::Round(($_.Free/($_.Used+$_.Free)*100), 1)
+    Write-Host ("  " + $_.Root + " " + [math]::Round($_.Used/1GB, 1) + "GB used / " + [math]::Round($_.Free/1GB, 1) + "GB free (" + $pct + "% free)")
 }
-Write-Host ""
 
-Write-Host "=== 3. GPU STATUS ==="
-try {
-    $gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.Name -match "NVIDIA|RTX|4070" } | Select-Object -First 1
-    if ($gpu) {
-        Write-Host "  GPU: $($gpu.Name)"
-        Write-Host "  Driver: $($gpu.DriverVersion)"
-        Write-Host "  VRAM (WMI):  $([math]::Round($gpu.AdapterRAM / 1GB, 1)) GB"
-        Write-Host '  NOTE: WMI often under-reports VRAM (e.g. reports 4GB for 8GB card)'
-        Write-Host '  Use nvidia-smi for accurate VRAM'
-    } else {
-        Write-Host "  NVIDIA GPU not found via WMI, checking nvidia-smi..."
-        nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>$null
-    }
+# --- Network ---
+Write-Host ""
+Write-Host "--- Network ---"
+$ping8 = Test-Connection 8.8.8.8 -Count 1 -Quiet -EA 0
+$pingGH = Test-Connection github.com -Count 1 -Quiet -EA 0
+$pingTC = Test-Connection 43.139.75.69 -Count 1 -Quiet -EA 0
+if ($ping8) { Write-Host "  8.8.8.8: OK" } else { Write-Host "  8.8.8.8: FAIL" }
+if ($pingGH) { Write-Host "  GitHub: OK" } else { Write-Host "  GitHub: FAIL" }
+if ($pingTC) { Write-Host "  TencentCloud: OK" } else { Write-Host "  TencentCloud: FAIL" }
+
+# --- Proxy ---
+Write-Host ""
+Write-Host "--- Proxy ---"
+$px = Get-Process -Name "Clash Verge","v2ray","trojan","qv2ray","clash-verge" -EA 0
+if ($px) {
+    $names = ($px | Select-Object -ExpandProperty ProcessName | Sort-Object -Unique) -join ", "
+    Write-Host ("  Running: " + $names)
+} else {
+    Write-Host "  Not running"
 }
-catch { Write-Host "  Could not query GPU" }
-Write-Host ""
 
-Write-Host "=== 4. NVIDIA-SMI (Temp, Power, Utilization) ==="
-try {
-    nvidia-smi --query-gpu=temperature.gpu,power.draw,utilization.gpu,utilization.memory --format=csv,noheader 2>$null
-}
-catch { Write-Host "  nvidia-smi not available" }
+# --- System Errors (24h) ---
 Write-Host ""
-
-Write-Host "=== 5. TOP 10 PROCESSES BY MEMORY ==="
-Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 10 | ForEach-Object {
-    Write-Host ("  {0,-35} {1,8} MB  CPU:{2,5}s" -f $_.ProcessName, [math]::Round($_.WorkingSet64/1MB,1), [math]::Round($_.TotalProcessorTime.TotalSeconds,1))
-}
-Write-Host ""
-
-Write-Host "=== 6. CRITICAL SYSTEM EVENTS (Last 24h) ==="
-$errs = Get-WinEvent -FilterHashtable @{LogName='System'; Level=1,2; StartTime=(Get-Date).AddHours(-24)} -MaxEvents 20 -ErrorAction SilentlyContinue
+Write-Host "--- System Errors (24h) ---"
+$errs = Get-WinEvent -LogName System -MaxEvents 100 -EA 0 | Where-Object { $_.LevelDisplayName -eq "Error" -and $_.TimeCreated -gt (Get-Date).AddHours(-24) }
 if ($errs) {
-    $errs | ForEach-Object {
-        Write-Host ("  [{0}] {1} - {2}" -f $_.TimeCreated.ToString("HH:mm"), $_.ProviderName, $_.Id)
+    $errs | Group-Object ProviderName | Sort-Object Count -Desc | Select-Object -First 5 | ForEach-Object {
+        Write-Host ("  [" + $_.Count + "x] " + $_.Name)
     }
 } else {
-    Write-Host "  No critical system events in last 24h"
+    Write-Host "  None"
 }
-Write-Host ""
 
-Write-Host "=== 7. APPLICATION EVENTS (Last 24h) ==="
-$appErrs = Get-WinEvent -FilterHashtable @{LogName='Application'; Level=1,2; StartTime=(Get-Date).AddHours(-24)} -MaxEvents 20 -ErrorAction SilentlyContinue
-if ($appErrs) {
-    $appErrs | ForEach-Object {
-        Write-Host ("  [{0}] {1} - {2}" -f $_.TimeCreated.ToString("HH:mm"), $_.ProviderName, $_.Id)
-    }
-} else {
-    Write-Host "  No critical application events in last 24h"
-}
+# --- Environment ---
 Write-Host ""
+Write-Host "--- Environment ---"
+$py = python --version 2>&1
+$pip = pip --version 2>&1
+Write-Host ("  Python: " + $py)
+Write-Host ("  pip: " + ($pip -split " ")[0..3] -join " ")
+try { $uv = uv --version 2>&1; Write-Host ("  uv: " + $uv) } catch { Write-Host "  uv: not found" }
 
-Write-Host "=== 8. SERVICE STATUS (key services) ==="
-$services = @("Tailscale", "Ollama", "WinDivert", "fastgithub")
-foreach ($svc in $services) {
-    $s = Get-Service -Name $svc -ErrorAction SilentlyContinue
-    if ($s) {
-        Write-Host ("  {0,-25} {1}" -f $svc, $s.Status)
+# --- Key Processes ---
+Write-Host ""
+Write-Host "--- Key Processes ---"
+$watch = @("ollama", "sunshine", "hermes")
+foreach ($n in $watch) {
+    $proc = Get-Process -Name $n -EA 0
+    if ($proc) {
+        $mb = [math]::Round($proc.WorkingSet64/1MB, 1)
+        Write-Host ("  " + $n + ": running (PID " + $proc.Id + ", " + $mb + "MB)")
     } else {
-        Write-Host ("  {0,-25} NOT FOUND" -f $svc)
+        Write-Host ("  " + $n + ": not running")
     }
 }
-Write-Host ""
-
-Write-Host "=============================================="
-Write-Host "  SYSTEM HEALTH CHECK COMPLETE"
-Write-Host "=============================================="
