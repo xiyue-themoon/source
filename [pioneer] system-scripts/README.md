@@ -15,6 +15,7 @@ Pioneer 侧 Hermes 子系统脚本合集。每个脚本对应一个子系统，�
 | `health-check.sh` | 65 | 安全与部署 | 系统健康检查 — 资源/网络/服务 |
 | `safe-exec.sh` | 67 | 安全与部署 | 安全执行包装器 — 幂等+回滚+审计 |
 | `gh-raw.sh` | 67 | 安全与部署 | GitHub raw 内容代理 — 绕过网络限制 |
+| `fetch_highvalue.py` | 183 | 新闻简讯 | news-digest 高价信息拉取 — arXiv/PubMed/RSS 纯文本采集（arXiv 4 线+PubMed 2 线+RSS 3 源） |
 
 **归属:** Pioneer
 
