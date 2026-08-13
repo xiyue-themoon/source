@@ -13,10 +13,12 @@ playlist.
 
 ## Usage
 
-```
-playlist_exporter.exe <url_or_uid> [-o output.txt]
-playlist_exporter.exe                      # interactive prompt
-```
+Double-click `launcher.bat` (or `playlist_exporter.exe`) -> paste share URL
+-> Enter -> output txt appears next to the exe.
+
+CLI forms:
+- `playlist_exporter.exe <url_or_uid> [-o output.txt]`
+- `playlist_exporter.exe`                      # interactive prompt
 
 Input forms:
 - `https://music.163.com/m/playlist?id=6981767948&creatorId=5192244309`
@@ -24,6 +26,14 @@ Input forms:
 - bare uid digits, e.g. `5192244309`
 
 Default output: `playlists_<uid>.txt` next to the exe (double-click safe).
+
+## Launcher (shell)
+
+`launcher.bat` = `chcp 65001` (UTF-8 console, Chinese UI renders) +
+`cd /d %~dp0` (output lands in the exe folder regardless of cwd) + run exe.
+exe itself pauses on exit ("Press Enter") so the window doesn't vanish.
+Source stays pure ASCII: Chinese UI strings are `\uXXXX` escapes in the
+source, rendered at runtime after the console switches to 65001.
 
 ## APIs used (all anonymous, no login)
 

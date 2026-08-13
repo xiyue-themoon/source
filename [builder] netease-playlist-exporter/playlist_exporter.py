@@ -3,10 +3,11 @@
 """NetEase Music playlist exporter - one-click fetch all owned playlists of a user.
 Usage:
     playlist_exporter.exe <url_or_uid> [-o output.txt]
-    playlist_exporter.exe            (interactive prompt)
+    playlist_exporter.exe            (interactive prompt, double-click friendly)
 Output: UTF-8 text file, each playlist section + "title - artist" lines.
-Pure ASCII program messages (GBK console safe). Chinese only in data.
+Source is pure ASCII; Chinese UI strings are \\uXXXX escapes rendered at runtime.
 """
+import ctypes
 import json
 import os
 import re
@@ -16,8 +17,23 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
-# Force UTF-8 console output (works on Windows Terminal / chcp 65001;
-# on legacy GBK consoles, Chinese chars may garble but files stay correct)
+# --- Console codepage adaptation -------------------------------------------
+# On double-click (cmd.exe, GBK cp936), switch console to UTF-8 so Chinese UI
+# renders correctly. On Windows Terminal / chcp 65001 already, no-op.
+def _console_codepage():
+    try:
+        return ctypes.windll.kernel32.GetConsoleOutputCP()
+    except Exception:
+        return 65001
+
+def _ensure_utf8_console():
+    try:
+        if _console_codepage() != 65001:
+            os.system("chcp 65001 >nul")
+    except Exception:
+        pass
+
+_ensure_utf8_console()
 if hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -34,6 +50,23 @@ APP_DIR = os.path.dirname(os.path.abspath(sys.executable if getattr(sys, "frozen
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
 BASE = "https://music.163.com/api"
+
+# --- UI strings (Chinese, stored as unicode escapes -> pure ASCII source) --
+U = {
+    "banner": "==== NetEase Playlist Exporter ====",
+    "prompt": "\u8bf7\u7c98\u8d34\u7f51\u6613\u4e91\u6b4c\u5355\u5206\u4eab\u94fe\u63a5\uff08\u6216\u8f93\u5165\u7528\u6237UID\uff09\uff0c\u7136\u540e\u6309\u56de\u8f66\uff1a",
+    "prompt_noinput": "\u672a\u68c0\u6d4b\u5230\u8f93\u5165\uff0c\u7a0b\u5e8f\u9000\u51fa\u3002",
+    "resolve": "\u6b63\u5728\u89e3\u6790\u6b4c\u5355\u521b\u5efa\u8005...",
+    "resolve_ok": "\u5df2\u8bc6\u522b\u8d26\u53f7 UID\uff1a{uid}\uff08\u6b4c\u5355\uff1a{name}\uff09",
+    "found": "\u627e\u5230 {n} \u4e2a\u81ea\u5efa\u6b4c\u5355\uff0c\u5f00\u59cb\u62c9\u53d6...",
+    "fetch_playlist": "  [{pid}] {name}\uff08{n} \u9996\uff09",
+    "done": "\u5168\u90e8\u5b8c\u6210\uff01\u5171\u5bfc\u51fa {n} \u9996\u6b4c\u3002",
+    "saved": "\u6587\u4ef6\u5df2\u4fdd\u5b58\u5230\uff1a{path}",
+    "failed": "\u5931\u8d25\u6b4c\u5355 ID\uff1a{ids}",
+    "error": "\u9519\u8bef\uff1a{msg}",
+    "exit": "\u6309\u56de\u8f66\u952e\u9000\u51fa...",
+    "help_url": "\u793a\u4f8b\uff1ahttps://music.163.com/m/playlist?id=123&creatorId=456",
+}
 
 
 def http_get(url):
@@ -121,7 +154,7 @@ def run(uid, out_path):
         print("No owned playlists found for this uid.")
         return 1
     playlists.sort(key=lambda p: p.get("createTime", 0))
-    print(f"Found {len(playlists)} owned playlists.")
+    print(U["found"].format(n=len(playlists)))
 
     lines, total, failed = [], 0, []
     for p in playlists:
@@ -130,7 +163,7 @@ def run(uid, out_path):
         if tids is None:
             failed.append(pid)
             continue
-        print(f"  [{pid}] {name} ({len(tids)} tracks)")
+        print(U["fetch_playlist"].format(pid=pid, name=name, n=len(tids)))
         details = get_song_details(tids)
         lines.append(f"===== {name} [{pid}] ({len(tids)} tracks) =====")
         for tid in tids:
@@ -142,11 +175,19 @@ def run(uid, out_path):
 
     with open(out_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    print(f"DONE. Playlists: {len(playlists)}, Tracks: {total}")
+    print(U["done"].format(n=total))
     if failed:
-        print(f"FAILED playlist ids: {failed}")
-    print(f"Saved: {out_path}")
+        print(U["failed"].format(ids=", ".join(map(str, failed))))
+    print(U["saved"].format(path=out_path))
     return 0
+
+
+def _pause():
+    """Wait for Enter; tolerate EOF (piped/redirected input)."""
+    try:
+        input(U["exit"])
+    except EOFError:
+        pass
 
 
 def main():
@@ -162,33 +203,41 @@ def main():
             pos.append(args[i])
             i += 1
 
+    print(U["banner"])
     arg = pos[0] if pos else ""
     if not arg:
         try:
-            arg = input("Paste NetEase Music playlist share URL or uid: ").strip()
+            arg = input(U["prompt"]).strip()
         except EOFError:
-            print("No input. Usage: playlist_exporter.exe <url_or_uid> [-o output.txt]")
+            arg = ""
+        if not arg:
+            print(U["prompt_noinput"])
+            print(U["help_url"])
+            _pause()
             return 1
 
     pid, uid = parse_input(arg)
     if not uid and pid:
-        print(f"Resolving creator from playlist {pid} ...")
+        print(U["resolve"])
         uid, pname = resolve_creator(pid)
-        print(f"Creator uid: {uid} (playlist: {pname})")
+        print(U["resolve_ok"].format(uid=uid, name=pname))
     if not uid:
-        print("Cannot determine user uid from input.")
-        print("Expected: share URL like https://music.163.com/m/playlist?id=XXX&creatorId=YYY")
-        print("          or a bare user uid (digits)")
+        print(U["error"].format(msg="Cannot determine user uid from input."))
+        print(U["help_url"])
+        _pause()
         return 1
 
     if not out_path:
         out_path = os.path.join(APP_DIR, f"playlists_{uid}.txt")
 
     try:
-        return run(uid, out_path)
+        rc = run(uid, out_path)
     except Exception as e:
-        print(f"ERROR: {e}")
-        return 1
+        print(U["error"].format(msg=e))
+        rc = 1
+
+    _pause()
+    return rc
 
 
 if __name__ == "__main__":
