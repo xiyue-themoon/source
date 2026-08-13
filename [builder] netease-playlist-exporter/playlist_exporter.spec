@@ -4,7 +4,7 @@
 a = Analysis(
     ['playlist_exporter.py'],
     pathex=[],
-    binaries=[],
+    binaries=[('C:/Windows/System32/VCRUNTIME140_1.dll', '.')],
     datas=[],
     hiddenimports=[],
     hookspath=[],

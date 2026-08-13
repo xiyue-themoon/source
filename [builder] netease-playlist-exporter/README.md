@@ -47,11 +47,31 @@ source, rendered at runtime after the console switches to 65001.
 
 ```
 hermes_python -m pip install pyinstaller
-hermes_python -m PyInstaller --onefile --console --name playlist_exporter --clean playlist_exporter.py
+hermes_python -m PyInstaller --onefile --console --name playlist_exporter \
+  --add-binary "C:/Windows/System32/VCRUNTIME140_1.dll;." --clean playlist_exporter.py
 # output: dist/playlist_exporter.exe
 ```
 
 hermes_python = `C:\Users\ROG\miniconda3\envs\hermes\python.exe`
+
+**Why the --add-binary is REQUIRED**: python312.dll links VCRUNTIME140_1.dll,
+but PyInstaller 6.22's hooks only bundle VCRUNTIME140.dll. On a clean foreign
+PC without VC++ Redistributable installed, the exe dies with
+"VCRUNTIME140_1.dll not found". Bundling it explicitly fixes that.
+
+## Portability (verified 2026-08-13)
+
+- Architecture: x64 (Machine 0x8664). Requires 64-bit Windows 10/11.
+- Self-contained: 60 bundled DLLs/pyds incl. python312.dll, VCRUNTIME140.dll,
+  VCRUNTIME140_1.dll, ucrtbase.dll, OpenSSL, zlib. Bootloader imports only
+  USER32/KERNEL32/ADVAPI32 (present on every Win10/11).
+- Verified by running the exe from a neutral temp dir with a stripped env
+  (PATH=System32 only, no conda, no user PATH): full export works, output
+  lands next to the exe. No dependency on the build machine.
+- SmartScreen caveat: unsigned exe may show "Windows protected your PC"
+  on first run (More info -> Run anyway). Normal for unsigned tools.
+- Antivirus caveat: PyInstaller onefile exes occasionally trigger false
+  positives in aggressive AV (360 etc.). Source is on GitHub for review.
 
 ## Pitfalls (learned)
 
