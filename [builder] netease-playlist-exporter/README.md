@@ -21,9 +21,9 @@ CLI forms:
 - `playlist_exporter.exe`                      # interactive prompt
 
 Input forms:
-- `https://music.163.com/m/playlist?id=6981767948&creatorId=5192244309`
-- `https://music.163.com/playlist?id=6981767948`   (creator auto-resolved)
-- bare uid digits, e.g. `5192244309`
+- `https://music.163.com/m/playlist?id=123456&creatorId=789012` (example)
+- `https://music.163.com/playlist?id=123456`   (creator auto-resolved)
+- bare uid digits, e.g. `789012`
 
 Default output: `playlists_<uid>.txt` next to the exe (double-click safe).
 
@@ -92,5 +92,5 @@ PC without VC++ Redistributable installed, the exe dies with
 
 ## Verification
 
-- 2026-08-13: uid 5192244309 → 39 owned playlists, 4433 tracks, exe run
+- 2026-08-13: test account (uid hidden) → 39 owned playlists, 4433 tracks, exe run
   from %TEMP% produced identical output to the script.
