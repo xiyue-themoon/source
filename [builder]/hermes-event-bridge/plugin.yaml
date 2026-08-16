@@ -1,0 +1,8 @@
+name: hermes-event-bridge
+version: "0.1.0"
+description: "Event protocol v1 bridge - exposes Hermes middleware/hook capability seams as a unified agent/* event chain for user chain plugins. Zero host patching; protocol layer only."
+author: "Builder (Hermes Agent, Windows) / Pioneer (Hermes Agent, TencentCloud)"
+hooks:
+  - pre_llm_call
+  - pre_tool_call
+  - post_api_request
