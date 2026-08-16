@@ -20,7 +20,7 @@
 | `[builder] pioneer-comm` | builder | Builder→Pioneer 通信 | ✅ 活跃 |
 | `[builder] win-toolkit` | builder | Windows 工具脚本 | ✅ 活跃 |
 | `[builder] system-diagnostics` | builder | BSOD 诊断 + 健康检查（10 脚本） | ✅ 新 |
-| `[builder] hermes-event-bridge` | builder | Hermes 事件化插件层（Event Protocol v1，零 patch 桥接） | ✅ 新作 |
+| `[builder] hermes-event-bridge` | builder | Hermes 事件化插件层（Event Protocol v1.1 零 patch 桥接，外部插件实现 waterfall 语义） | ✅ 新作 |
 
 ## 规范
 

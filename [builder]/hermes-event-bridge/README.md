@@ -48,7 +48,9 @@ class MyChain:
     async def handle(self, ctx: dict, next_call: Callable) -> Any:
         # request class: return {"request": {...}} or None
         # execution class: call await next_call(payload) or short-circuit
-        # observe class: return {"context": str} / {"decision": "block", ...} / None
+        # observe class: return {"context": str} / {"action": "block", "message": str} / None
+        #   ⚠️ block 必须用 action key（宿主 plugins.py get_pre_tool_call_directive 只认 action）；
+        #      protocol.block_decision() 已双 key 兼容（action + decision）
         ...
 ```
 
