@@ -9,14 +9,28 @@ from __future__ import annotations
 
 import asyncio
 import importlib.util
+import os
 import sys
 import types
 from typing import Any, Callable, Dict, List
 
 # Load the plugin the same way Hermes does: as hermes_plugins.<slug> with
 # module.__path__ pointing at the plugin dir (so relative imports work).
+# The plugin dir is derived from this file's location - if the test lives
+# inside the plugin directory, it is one level up; if copied elsewhere,
+# fall back to the standard Hermes plugin locations.
 _NS_PARENT = "hermes_plugins"
-_plugin_dir = r"C:\Users\ROG\.hermes\plugins\hermes-event-bridge"
+_here = os.path.dirname(os.path.abspath(__file__))
+_candidates = [
+    os.path.join(_here, "hermes-event-bridge"),   # test copied into repo root
+    os.path.dirname(_here),                        # test inside plugin dir
+    os.path.expanduser(r"~/AppData/Local/hermes/plugins/hermes-event-bridge"),
+    os.path.expanduser(r"~/.hermes/plugins/hermes-event-bridge"),
+]
+_plugin_dir = next((p for p in _candidates if os.path.isfile(os.path.join(p, "__init__.py"))), None)
+if _plugin_dir is None:
+    raise SystemExit(f"hermes-event-bridge plugin dir not found; tried: {_candidates}")
+
 if _NS_PARENT not in sys.modules:
     ns_pkg = types.ModuleType(_NS_PARENT)
     ns_pkg.__path__ = []  # type: ignore[attr-defined]
@@ -25,7 +39,7 @@ if _NS_PARENT not in sys.modules:
 
 _spec = importlib.util.spec_from_file_location(
     f"{_NS_PARENT}.hermes_event_bridge",
-    rf"{_plugin_dir}\__init__.py",
+    os.path.join(_plugin_dir, "__init__.py"),
     submodule_search_locations=[_plugin_dir],
 )
 _bridge = importlib.util.module_from_spec(_spec)

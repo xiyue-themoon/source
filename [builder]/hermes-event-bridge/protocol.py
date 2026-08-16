@@ -68,8 +68,14 @@ def tool_args_replacement(args: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def block_decision(message: str) -> Dict[str, Any]:
-    """Return shape for EVENT_PRE_TOOL_CALL handlers: short-circuit block."""
-    return {"decision": "block", "message": message}
+    """Return shape for EVENT_PRE_TOOL_CALL handlers: short-circuit block.
+
+    v1.1 contract fix (2026-08-16, cloud verification): the HOST
+    (get_pre_tool_call_directive, plugins.py L2157-2173) parses the ``action``
+    key - {"decision": "block"} is silently ignored. We return BOTH keys so the
+    host reads ``action`` and chain code / tests can read ``decision``.
+    """
+    return {"action": "block", "decision": "block", "message": message}
 
 
 def context_injection(context: str) -> Dict[str, Any]:
