@@ -57,6 +57,15 @@ class ChainRegistry:
     def run_execution(self, event: str, ctx: Dict[str, Any], terminal: Callable[[Any], Any]) -> Any:
         plugins = self.subscribed(event)
 
+        # Empty-chain short-circuit: when NO chain plugin subscribes to this
+        # execution event, forward straight to the host terminal synchronously.
+        # Building an async call_at + _await() here is not just overhead: inside
+        # a running asyncio loop (Hermes agent loop) _await() blocks the loop
+        # thread on a future the loop itself must complete -> InvalidStateError
+        # 'Result is not set.' on EVERY tool call even though the tool ran fine.
+        if not plugins:
+            return terminal(ctx.get("request") if "request" in ctx else ctx.get("args"))
+
         async def call_at(index: int, payload: Any) -> Any:
             if index >= len(plugins):
                 return terminal(payload)
